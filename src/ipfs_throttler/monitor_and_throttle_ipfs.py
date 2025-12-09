@@ -63,8 +63,11 @@ def load_config():
 
 whitelist, blacklist = load_config()
 for multiaddr in ipfs_api.client._http_client.bootstrap.list()["Peers"]:
+    if "/" not in multiaddr:
+        continue
     parts = multiaddr.split("/")
-    parts.remove("")
+    while "" in parts:
+        parts.remove("")
     scheme = parts[0]
     address = parts[1]
     ip_address = None
