@@ -59,7 +59,7 @@ I encourage you to adapt this script for other network metrics and IPFS limitati
 Download this project, install the prerequisites listed in `requirements.txt` and run the folder with Python.
 
 ```sh
-git clone https://github.com/emendir/ipfs-throttler
+git clone https://github.com/emendir/IPFS-Throttler
 pip install -r ipfs-throttler/requirements.txt
 python3 ipfs-throttler
 ```
@@ -85,7 +85,7 @@ Read it first to make sure you're happy with what it does.
 
 ```sh
 
-git clone https://github.com/emendir/ipfs-throttler
+git clone https://github.com/emendir/IPFS-Throttler
 ./ipfs-throttler/install.sh
 ```
 

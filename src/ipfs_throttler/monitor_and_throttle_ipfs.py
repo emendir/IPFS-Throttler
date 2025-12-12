@@ -48,7 +48,10 @@ DEFAULT_BLACKLIST = []
 
 def load_config():
     if not os.path.exists(CONFIG_FILE_PATH):
-        toml.dump({"whitelist": [], "bloacklist": []}, open(CONFIG_FILE_PATH, "w+"))
+        toml.dump(
+            {"whitelist": DEFAULT_WHITELIST, "bloacklist": DEFAULT_BLACKLIST},
+            open(CONFIG_FILE_PATH, "w+"),
+        )
     try:
         config = toml.load(CONFIG_FILE_PATH)
         whitelist = config.get("whitelist", DEFAULT_WHITELIST)
