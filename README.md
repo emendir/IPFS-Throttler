@@ -60,8 +60,8 @@ Download this project, install the prerequisites listed in `requirements.txt` an
 
 ```sh
 git clone https://github.com/emendir/IPFS-Throttler
-pip install -r ipfs-throttler/requirements.txt
-python3 ipfs-throttler
+pip install -r IPFS-Throttler/requirements.txt
+python3 IPFS-Throttler
 ```
 
 ### Requirements
@@ -86,7 +86,7 @@ Read it first to make sure you're happy with what it does.
 ```sh
 
 git clone https://github.com/emendir/IPFS-Throttler
-./ipfs-throttler/install.sh
+./IPFS-Throttler/install.sh
 ```
 
 Logs are written to `/opt/ipfs_throttler/IPFS_Ping_Monitor.csv`
