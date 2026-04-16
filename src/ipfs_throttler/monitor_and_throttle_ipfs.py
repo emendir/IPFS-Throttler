@@ -140,6 +140,7 @@ def apply_strict_filters():
         remove_all_filters()
 
         filters_to_apply = get_complement_cidrs(whitelist, blacklist)
+
         multi_addr_filters = [
             f"/ip4/{cidr.network_address}/ipcidr/{cidr.prefixlen}"
             for cidr in filters_to_apply
@@ -151,13 +152,13 @@ def apply_strict_filters():
         # this error always gets thrown, isn't a problem
         pass
     except ipfs_api.ipfshttpclient.exceptions.ConnectionError as e:
-        logger.error(f"ConnectionError: {e}")
+        logger.debug(f"ConnectionError: {e}")
 
 
 def remove_all_filters():
     """Remove all currently applied IPFS filters."""
     try:
-        logger.info("Removing all filters")
+        logger.debug("Removing all filters")
         filters = ipfs_api.get_swarm_filters()
         for filter_entry in filters:
             logger.debug(f"Removing filter: {filter_entry}")
@@ -166,7 +167,7 @@ def remove_all_filters():
         # this error always gets thrown, isn't a problem
         pass
     except ipfs_api.ipfshttpclient.exceptions.ConnectionError as e:
-        logger.error(f"ConnectionError: {e}")
+        logger.debug(f"ConnectionError: {e}")
 
 
 def remove_strict_filters():
@@ -182,7 +183,7 @@ def remove_strict_filters():
         # this error always gets thrown, isn't a problem
         pass
     except ipfs_api.ipfshttpclient.exceptions.ConnectionError as e:
-        logger.error(f"ConnectionError: {e}")
+        logger.debug(f"ConnectionError: {e}")
 
 
 def are_strict_filters_applied():
@@ -195,10 +196,10 @@ def are_strict_filters_applied():
             for cidr in get_complement_cidrs(whitelist, blacklist)
         }
         result = filters == expected_filters
-        logger.info(f"Strict filters applied: {result}")
+        logger.debug(f"Strict filters applied: {result}")
         return result
     except ipfs_api.ipfshttpclient.exceptions.ConnectionError as e:
-        logger.error(f"ConnectionError: {e}")
+        logger.debug(f"ConnectionError: {e}")
         return False
 
 
@@ -234,7 +235,7 @@ def get_ping_latency(PING_IP_ADDRESS, timeout):
     if ping_process.returncode == 0:
         match = re.search(r"time=([\d.]+) ms", output.decode("utf-8"))
         if match:
-            return float(match.group(1))
+            return round(float(match.group(1)), 1)
 
 
 latencies = []
@@ -256,7 +257,7 @@ def ping_once() -> float | None:
         for line in output.stdout.splitlines():
             if "time=" in line:
                 latency = float(line.split("time=")[1].split(" ")[0])
-                return latency
+                return round(latency, 1)
 
     except Exception as e:
         return None
@@ -272,7 +273,7 @@ def do_latency_measurement() -> float | None:
         if len(latencies) > WINDOW_SIZE:
             latencies.pop(0)
 
-        avg_latency = statistics.mean(latencies)
+        avg_latency = round(statistics.mean(latencies), 1)
         # print(avg_latency)
         return avg_latency
     else:
@@ -305,6 +306,7 @@ def check_pings():
 
     if avg_latency and avg_latency > PING_NOTIFY_THRESHOLD_MS:
         if not notified:
+            logger.debug("Sending desktop notification...")
             notify(
                 "⚠️ High Ping Latency ⚠️",
                 f"Average ping to {PING_TARGET} is {int(avg_latency)}ms (>{
@@ -314,7 +316,7 @@ def check_pings():
             notified = True
     else:
         notified = False  # Reset so we can notify again if needed
-    logger.info(f"{avg_latency},{peers_count},{int(limitation)}")
+    logger.debug(f"{avg_latency},{peers_count},{int(limitation)}")
 
 
 def get_num_ipfs_peers():
@@ -330,12 +332,12 @@ logger.remove(0)  # remove default logger
 # add custom logger for printing to console
 logger.add(sys.stdout, format="<level>{message}</level>")
 # add logger for writing to log file
-logger.add(
-    LOG_FILE_PATH,
-    format="{time:DD-MMM-YYYY HH:mm:ss},{message}",
-    rotation="1 MB",
-    retention="5 days",
-)
+# logger.add(
+#     LOG_FILE_PATH,
+#     format="{time:DD-MMM-YYYY HH:mm:ss},{message}",
+#     rotation="1 MB",
+#     retention="5 days",
+# )
 
 
 def run_monitor():
@@ -358,7 +360,9 @@ def run_monitor():
         try:
             check_pings()
         except ipfs_api.ipfshttpclient.exceptions.ConnectionError as e:
-            logger.error(f"ConnectionError: {e}")
+            logger.debug(f"ConnectionError: {e}")
+        except Exception as e:
+            logger.debug(e)
         sleep(1)
 
 
