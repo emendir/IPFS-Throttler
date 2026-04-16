@@ -41,7 +41,10 @@ DEFAULT_WHITELIST = [
     "172.16.0.0/12",
     "10.0.0.0/8",
 ]
-DEFAULT_BLACKLIST = []
+DEFAULT_BLACKLIST: list[str] = []
+
+blacklist: list[str] = []
+whitelacklist: list[str] = []
 
 # Load configuration from a TOML file
 
@@ -64,33 +67,48 @@ def load_config():
     return whitelist, blacklist
 
 
-whitelist, blacklist = load_config()
-for multiaddr in ipfs_api.client._http_client.bootstrap.list()["Peers"]:
-    if "/" not in multiaddr:
-        continue
-    parts = multiaddr.split("/")
-    while "" in parts:
-        parts.remove("")
-    scheme = parts[0]
-    address = parts[1]
-    ip_address = None
-    match scheme:
-        case "ip4":
-            ip_address = address
-        case "ip6":
-            print("Not filtering IPv6...")
-        case "dnsaddr":
-            try:
-                ip_address = socket.gethostbyname(address)
-            except socket.gaierror:
-                print(f"Failed to resolve domain: {address}")
-        case _:
-            print(f"Failed to parse multiaddr: {multiaddr}")
-    if ip_address:
-        whitelist.append(f"{ip_address}/32")
-print("\nWhitelist:")
-for net_addr in whitelist:
-    print(f"  {net_addr}")
+def initialise():
+    global whitelist
+    global blacklist
+    whitelist, blacklist = load_config()
+    # for multiaddr in ipfs_api.client._http_client.bootstrap.list()["P/ip4/104.131.131.82eers"]:
+    #     if "/" not in multiaddr:
+    #         continue
+    #     parts = multiaddr.split("/")
+    #     while "" in parts:
+    #         parts.remove("")
+    #     scheme = parts[0]
+    #     address = parts[1]
+    #     ip_address = None
+    #     match scheme:
+    #         case "ip4":
+    #             ip_address = address
+    #         case "ip6":
+    #             print("Not filtering IPv6...")
+    #         case "dnsaddr":
+    #             try:
+    #                 ip_address = socket.gethostbyname(address)
+    #             except socket.gaierror:
+    #                 print(f"Failed to resolve domain: {address}")
+    #         case _:
+    #             print(f"Failed to parse multiaddr: {multiaddr}")
+    #     if ip_address:
+    #         whitelist.append(f"{ip_address}/32")
+    # print("\nWhitelist:")
+    # for net_addr in whitelist:
+    #     print(f"  {net_addr}")
+    #
+    # print("\nBlacklist:")
+    # for net_addr in blacklist:
+    #     print(f"  {net_addr}")
+
+    filters_to_apply = get_complement_cidrs(whitelist, blacklist)
+
+    multi_addr_filters = [
+        f"/ip4/{cidr.network_address}/ipcidr/{cidr.prefixlen}"
+        for cidr in filters_to_apply
+    ]
+    # print(multi_addr_filters)
 
 
 def get_complement_cidrs(allowed_cidrs, blocked_cidrs):
@@ -321,7 +339,21 @@ logger.add(
 
 
 def run_monitor():
-    remove_strict_filters()
+    # initialise
+    initialised = False
+    while not initialised:
+        try:
+            initialise()
+            remove_strict_filters()
+            initialised = True
+            break
+        except ipfs_api.ipfshttpclient.exceptions.ConnectionError as e:
+            logger.debug(f"ConnectionError: {e}")
+        except Exception as e:
+            logger.debug(e)
+        sleep(1)
+
+    # main loop
     while True:
         try:
             check_pings()
