@@ -1,0 +1,13 @@
+[Unit]
+Description=IPFS network effects monitor
+
+[Service]
+Environment=DISPLAY=:0
+Environment=XDG_RUNTIME_DIR=%t/runtime-%u
+ExecStart=/usr/bin/bash -c 'source /opt/IPFS-Throttler/.venv/bin/activate && python3 /opt/IPFS-Throttler/src/ipfs_throttler/monitor_and_throttle_ipfs.py'
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target
+

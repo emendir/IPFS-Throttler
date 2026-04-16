@@ -2,3 +2,4 @@ IPFS-Toolkit>=0.6.0rc2
 loguru
 toml
 PyGObject
+emtest
